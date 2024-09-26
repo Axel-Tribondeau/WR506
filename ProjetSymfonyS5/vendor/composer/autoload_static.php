@@ -138,6 +138,10 @@ class ComposerStaticInit8116c249f0b4dbcd995d077b53ca826b
             'Monolog\\' => 8,
             'Masterminds\\' => 12,
         ),
+        'G' => 
+        array (
+            'GraphQL\\' => 8,
+        ),
         'E' => 
         array (
             'Egulias\\EmailValidator\\' => 23,
@@ -531,6 +535,10 @@ class ComposerStaticInit8116c249f0b4dbcd995d077b53ca826b
         'Masterminds\\' => 
         array (
             0 => __DIR__ . '/..' . '/masterminds/html5/src',
+        ),
+        'GraphQL\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/webonyx/graphql-php/src',
         ),
         'Egulias\\EmailValidator\\' => 
         array (

@@ -309,6 +309,9 @@
       <parameter key="jsonld" type="collection">
         <parameter>application/ld+json</parameter>
       </parameter>
+      <parameter key="json" type="collection">
+        <parameter>application/json</parameter>
+      </parameter>
     </parameter>
     <parameter key="api_platform.patch_formats" type="collection">
       <parameter key="json" type="collection">
@@ -428,13 +431,15 @@
     <parameter key="api_platform.enable_re_doc">true</parameter>
     <parameter key="api_platform.swagger.api_keys" type="collection"/>
     <parameter key="api_platform.swagger_ui.extra_configuration" type="collection"/>
-    <parameter key="api_platform.graphql.enabled">false</parameter>
-    <parameter key="api_platform.graphql.introspection.enabled">false</parameter>
-    <parameter key="api_platform.graphql.graphiql.enabled">false</parameter>
-    <parameter key="api_platform.graphql.graphql_playground.enabled">false</parameter>
+    <parameter key="api_platform.graphql.enabled">true</parameter>
+    <parameter key="api_platform.graphql.introspection.enabled">true</parameter>
+    <parameter key="api_platform.graphql.graphiql.enabled">true</parameter>
+    <parameter key="api_platform.graphql.graphql_playground.enabled">true</parameter>
     <parameter key="api_platform.graphql.collection.pagination" type="collection">
       <parameter key="enabled">true</parameter>
     </parameter>
+    <parameter key="api_platform.graphql.default_ide">graphiql</parameter>
+    <parameter key="api_platform.graphql.nesting_separator">_</parameter>
     <parameter key="api_platform.validator.legacy_validation_exception">true</parameter>
     <parameter key="api_platform.validator.serialize_payload_fields" type="collection"/>
     <parameter key="api_platform.validator.query_parameter_validation">true</parameter>
@@ -752,6 +757,7 @@
         <argument key="api_platform.cache.metadata.resource" type="service" id="api_platform.cache.metadata.resource" on-invalid="ignore_uninitialized"/>
         <argument key="api_platform.cache.metadata.property" type="service" id="api_platform.cache.metadata.property" on-invalid="ignore_uninitialized"/>
         <argument key="api_platform.cache.metadata.resource_collection" type="service" id="api_platform.cache.metadata.resource_collection" on-invalid="ignore_uninitialized"/>
+        <argument key="api_platform.graphql.cache.subscription" type="service" id="api_platform.graphql.cache.subscription" on-invalid="ignore_uninitialized"/>
         <argument key="debug.security.event_dispatcher.main" type="service" id="debug.security.event_dispatcher.main" on-invalid="ignore_uninitialized"/>
         <argument key=".debug.http_client" type="service" id=".debug.http_client" on-invalid="ignore_uninitialized"/>
       </argument>
@@ -862,6 +868,9 @@
         <argument key="api_platform.cache.metadata.resource_collection" type="collection">
           <argument>reset</argument>
         </argument>
+        <argument key="api_platform.graphql.cache.subscription" type="collection">
+          <argument>reset</argument>
+        </argument>
         <argument key="debug.security.event_dispatcher.main" type="collection">
           <argument>reset</argument>
         </argument>
@@ -905,7 +914,7 @@
     <service id="container.get_routing_condition_service" class="Closure" public="true">
       <tag name="routing.expression_language_function" function="service"/>
       <argument type="collection">
-        <argument type="service" id="api_platform.filter_locator"/>
+        <argument type="service" id="api_platform.graphql.resolver_locator"/>
         <argument>get</argument>
       </argument>
       <factory class="Closure" method="fromCallable"/>
@@ -1037,6 +1046,7 @@
         <argument>api_platform.cache.metadata.resource</argument>
         <argument>api_platform.cache.metadata.property</argument>
         <argument>api_platform.cache.metadata.resource_collection</argument>
+        <argument>api_platform.graphql.cache.subscription</argument>
       </argument>
       <call method="setName">
         <argument>cache:pool:clear</argument>
@@ -1089,6 +1099,7 @@
         <argument>api_platform.cache.metadata.resource</argument>
         <argument>api_platform.cache.metadata.property</argument>
         <argument>api_platform.cache.metadata.resource_collection</argument>
+        <argument>api_platform.graphql.cache.subscription</argument>
       </argument>
       <call method="setName">
         <argument>cache:pool:delete</argument>
@@ -1118,6 +1129,7 @@
         <argument>api_platform.cache.metadata.resource</argument>
         <argument>api_platform.cache.metadata.property</argument>
         <argument>api_platform.cache.metadata.resource_collection</argument>
+        <argument>api_platform.graphql.cache.subscription</argument>
       </argument>
       <call method="setName">
         <argument>cache:pool:list</argument>
@@ -1833,6 +1845,7 @@
         <argument key="api_platform.cache.metadata.resource" type="service" id="api_platform.cache.metadata.resource" on-invalid="ignore_uninitialized"/>
         <argument key="api_platform.cache.metadata.property" type="service" id="api_platform.cache.metadata.property" on-invalid="ignore_uninitialized"/>
         <argument key="api_platform.cache.metadata.resource_collection" type="service" id="api_platform.cache.metadata.resource_collection" on-invalid="ignore_uninitialized"/>
+        <argument key="api_platform.graphql.cache.subscription" type="service" id="api_platform.graphql.cache.subscription" on-invalid="ignore_uninitialized"/>
       </argument>
     </service>
     <service id="cache.global_clearer" class="Symfony\Component\HttpKernel\CacheClearer\Psr6CacheClearer" public="true">
@@ -1855,6 +1868,7 @@
         <argument key="api_platform.cache.metadata.resource" type="service" id="api_platform.cache.metadata.resource" on-invalid="ignore_uninitialized"/>
         <argument key="api_platform.cache.metadata.property" type="service" id="api_platform.cache.metadata.property" on-invalid="ignore_uninitialized"/>
         <argument key="api_platform.cache.metadata.resource_collection" type="service" id="api_platform.cache.metadata.resource_collection" on-invalid="ignore_uninitialized"/>
+        <argument key="api_platform.graphql.cache.subscription" type="service" id="api_platform.graphql.cache.subscription" on-invalid="ignore_uninitialized"/>
       </argument>
     </service>
     <service id="identity_translator" class="Symfony\Component\Translation\IdentityTranslator"/>
@@ -3347,14 +3361,6 @@
         <argument>-100</argument>
       </call>
       <call method="addListener">
-        <argument>Symfony\Component\Messenger\Event\WorkerRunningEvent</argument>
-        <argument type="collection">
-          <argument type="service_closure" id="messenger.listener.dispatch_pcntl_signal_listener"/>
-          <argument>onWorkerRunning</argument>
-        </argument>
-        <argument>100</argument>
-      </call>
-      <call method="addListener">
         <argument>Symfony\Component\Messenger\Event\WorkerStartedEvent</argument>
         <argument type="collection">
           <argument type="service_closure" id="messenger.listener.stop_worker_on_restart_signal_listener"/>
@@ -4252,7 +4258,7 @@
         <argument type="service" id="validator.validator_factory"/>
       </call>
       <call method="setGroupProviderLocator">
-        <argument type="service" id="api_platform.filter_locator"/>
+        <argument type="service" id="api_platform.graphql.resolver_locator"/>
       </call>
       <call method="setTranslator">
         <argument type="service" id="translator.data_collector" on-invalid="ignore"/>
@@ -5101,6 +5107,10 @@
       <call method="addInstance">
         <argument>api_platform.cache.metadata.resource_collection</argument>
         <argument type="service" id="api_platform.cache.metadata.resource_collection"/>
+      </call>
+      <call method="addInstance">
+        <argument>api_platform.graphql.cache.subscription</argument>
+        <argument type="service" id="api_platform.graphql.cache.subscription"/>
       </call>
     </service>
     <service id="cache_pool_clearer.cache_warmer" class="Symfony\Bundle\FrameworkBundle\CacheWarmer\CachePoolClearerCacheWarmer">
@@ -6278,7 +6288,7 @@
       <tag name="twig.extension"/>
     </service>
     <service id="twig.extension.htmlsanitizer" class="Symfony\Bridge\Twig\Extension\HtmlSanitizerExtension">
-      <argument type="service" id="api_platform.filter_locator"/>
+      <argument type="service" id="api_platform.graphql.resolver_locator"/>
     </service>
     <service id="twig.extension.httpkernel" class="Symfony\Bridge\Twig\Extension\HttpKernelExtension">
       <tag name="twig.extension"/>
@@ -6509,7 +6519,7 @@
     </service>
     <service id="turbo.twig.extension" class="Symfony\UX\Turbo\Twig\TwigExtension">
       <tag name="twig.extension"/>
-      <argument type="service" id="api_platform.filter_locator"/>
+      <argument type="service" id="api_platform.graphql.resolver_locator"/>
       <argument>default</argument>
     </service>
     <service id="turbo.doctrine.event_listener" class="Symfony\UX\Turbo\Doctrine\BroadcastListener">
@@ -7600,11 +7610,11 @@
       <argument type="service" id="service_container"/>
       <argument>%api_platform.formats%</argument>
       <argument>%api_platform.resource_class_directories%</argument>
-      <argument>false</argument>
       <argument>true</argument>
       <argument>true</argument>
-      <argument>false</argument>
-      <argument>false</argument>
+      <argument>true</argument>
+      <argument>true</argument>
+      <argument>true</argument>
       <argument>null</argument>
     </service>
     <service id="api_platform.symfony.iri_converter.skolem" class="ApiPlatform\Symfony\Routing\SkolemIriConverter">
@@ -7828,14 +7838,14 @@
       <argument>null</argument>
       <argument type="service" id="monolog.logger" on-invalid="null"/>
       <argument>%api_platform.defaults%</argument>
-      <argument>false</argument>
+      <argument>true</argument>
     </service>
     <service id="api_platform.metadata.resource.metadata_collection_factory.xml" class="ApiPlatform\Metadata\Resource\Factory\ExtractorResourceMetadataCollectionFactory">
       <argument type="service" id="api_platform.metadata.resource_extractor.xml"/>
       <argument type="service" id="api_platform.metadata.resource.metadata_collection_factory.parameter"/>
       <argument>%api_platform.defaults%</argument>
       <argument type="service" id="monolog.logger" on-invalid="null"/>
-      <argument>false</argument>
+      <argument>true</argument>
     </service>
     <service id="api_platform.metadata.resource.metadata_collection_factory.not_exposed_operation" class="ApiPlatform\Metadata\Resource\Factory\NotExposedOperationResourceMetadataCollectionFactory">
       <argument type="service" id="api_platform.doctrine.orm.metadata.resource.link_factory"/>
@@ -7912,7 +7922,7 @@
       <argument type="service" id="api_platform.metadata.resource.metadata_collection_factory.xml"/>
       <argument>%api_platform.defaults%</argument>
       <argument type="service" id="monolog.logger" on-invalid="null"/>
-      <argument>false</argument>
+      <argument>true</argument>
     </service>
     <service id="api_platform.metadata.property.metadata_factory.yaml" class="ApiPlatform\Metadata\Property\Factory\ExtractorPropertyMetadataFactory">
       <argument type="service" id="api_platform.metadata.property_extractor.yaml"/>
@@ -8032,9 +8042,9 @@
       <argument>true</argument>
       <argument>true</argument>
       <argument>true</argument>
-      <argument>false</argument>
-      <argument>false</argument>
-      <argument>false</argument>
+      <argument>true</argument>
+      <argument>true</argument>
+      <argument>true</argument>
       <argument>null</argument>
       <argument type="collection"/>
     </service>
@@ -8188,6 +8198,204 @@
       <tag name="serializer.normalizer" priority="-800"/>
       <argument type="service" id="api_platform.serializer.normalizer.item"/>
       <argument type="service" id="serializer.name_converter.metadata_aware" on-invalid="ignore"/>
+    </service>
+    <service id="api_platform.graphql.executor" class="ApiPlatform\GraphQl\Executor">
+      <argument>true</argument>
+    </service>
+    <service id="api_platform.graphql.query_resolver_locator" class="Symfony\Component\DependencyInjection\ServiceLocator">
+      <tag name="container.service_locator"/>
+      <argument type="collection"/>
+    </service>
+    <service id="api_platform.graphql.mutation_resolver_locator" class="Symfony\Component\DependencyInjection\ServiceLocator">
+      <tag name="container.service_locator"/>
+      <argument type="collection"/>
+    </service>
+    <service id="api_platform.graphql.resolver_locator" class="Symfony\Component\DependencyInjection\ServiceLocator">
+      <tag name="container.service_locator"/>
+      <argument type="collection"/>
+    </service>
+    <service id="api_platform.graphql.iterable_type" class="ApiPlatform\GraphQl\Type\Definition\IterableType">
+      <tag name="api_platform.graphql.type"/>
+    </service>
+    <service id="api_platform.graphql.upload_type" class="ApiPlatform\GraphQl\Type\Definition\UploadType">
+      <tag name="api_platform.graphql.type"/>
+    </service>
+    <service id="api_platform.graphql.type_locator" class="Symfony\Component\DependencyInjection\ServiceLocator">
+      <tag name="container.service_locator"/>
+      <argument type="collection">
+        <argument key="api_platform.graphql.iterable_type" type="service_closure" id="api_platform.graphql.iterable_type"/>
+        <argument key="api_platform.graphql.upload_type" type="service_closure" id="api_platform.graphql.upload_type"/>
+      </argument>
+    </service>
+    <service id="api_platform.graphql.types_container" class="ApiPlatform\GraphQl\Type\TypesContainer"/>
+    <service id="api_platform.graphql.types_factory" class="ApiPlatform\GraphQl\Type\TypesFactory">
+      <argument type="service" id="api_platform.graphql.type_locator"/>
+      <argument type="collection">
+        <argument>api_platform.graphql.iterable_type</argument>
+        <argument>api_platform.graphql.upload_type</argument>
+      </argument>
+    </service>
+    <service id="api_platform.graphql.fields_builder_locator" class="Symfony\Component\DependencyInjection\ServiceLocator">
+      <tag name="container.service_locator"/>
+      <argument type="collection">
+        <argument key="api_platform.graphql.fields_builder" type="service_closure" id="api_platform.graphql.fields_builder"/>
+      </argument>
+    </service>
+    <service id="api_platform.graphql.action.entrypoint" class="ApiPlatform\GraphQl\Action\EntrypointAction" public="true">
+      <argument type="service" id="api_platform.graphql.schema_builder"/>
+      <argument type="service" id="api_platform.graphql.executor"/>
+      <argument type="service" id="api_platform.graphql.action.graphiql" on-invalid="null"/>
+      <argument type="service" id="api_platform.graphql.action.graphql_playground" on-invalid="null"/>
+      <argument type="service" id="debug.serializer"/>
+      <argument type="service" id="api_platform.graphql.error_handler"/>
+      <argument>true</argument>
+      <argument>true</argument>
+      <argument>true</argument>
+      <argument>graphiql</argument>
+    </service>
+    <service id="api_platform.graphql.action.graphiql" class="ApiPlatform\GraphQl\Action\GraphiQlAction" public="true">
+      <argument type="service" id="twig"/>
+      <argument type="service" id="api_platform.router"/>
+      <argument>true</argument>
+      <argument>Hello API Platform</argument>
+      <argument>null</argument>
+    </service>
+    <service id="api_platform.graphql.action.graphql_playground" class="ApiPlatform\GraphQl\Action\GraphQlPlaygroundAction" public="true">
+      <argument type="service" id="twig"/>
+      <argument type="service" id="api_platform.router"/>
+      <argument>true</argument>
+      <argument>Hello API Platform</argument>
+      <argument>null</argument>
+    </service>
+    <service id="api_platform.graphql.error_handler" class="ApiPlatform\GraphQl\Error\ErrorHandler"/>
+    <service id="api_platform.graphql.subscription.subscription_identifier_generator" class="ApiPlatform\GraphQl\Subscription\SubscriptionIdentifierGenerator"/>
+    <service id="api_platform.graphql.cache.subscription" class="Symfony\Component\Cache\Adapter\TraceableAdapter">
+      <tag name="cache.pool"/>
+      <tag name="kernel.reset" method="reset"/>
+      <argument type="service" id="api_platform.graphql.cache.subscription.recorder_inner"/>
+    </service>
+    <service id="api_platform.graphql.command.export_command" class="ApiPlatform\Symfony\Bundle\Command\GraphQlExportCommand">
+      <tag name="console.command"/>
+      <tag name="container.no_preload"/>
+      <argument type="service" id="api_platform.graphql.schema_builder"/>
+      <call method="setName">
+        <argument>api:graphql:export</argument>
+      </call>
+    </service>
+    <service id="api_platform.graphql.type_converter" class="ApiPlatform\GraphQl\Type\TypeConverter">
+      <argument type="service" id="api_platform.graphql.type_builder"/>
+      <argument type="service" id="api_platform.graphql.types_container"/>
+      <argument type="service" id="api_platform.metadata.resource.metadata_collection_factory.cached"/>
+      <argument type="service" id="api_platform.metadata.property.metadata_factory.cached"/>
+    </service>
+    <service id="api_platform.graphql.type_builder" class="ApiPlatform\GraphQl\Type\TypeBuilder">
+      <argument type="service" id="api_platform.graphql.types_container"/>
+      <argument type="service" id="api_platform.graphql.resolver.resource_field"/>
+      <argument type="service" id="api_platform.graphql.fields_builder_locator"/>
+      <argument type="service" id="api_platform.pagination"/>
+    </service>
+    <service id="api_platform.graphql.fields_builder" class="ApiPlatform\GraphQl\Type\FieldsBuilder">
+      <argument type="service" id="api_platform.metadata.property.name_collection_factory.cached"/>
+      <argument type="service" id="api_platform.metadata.property.metadata_factory.cached"/>
+      <argument type="service" id="api_platform.metadata.resource.metadata_collection_factory.cached"/>
+      <argument type="service" id="api_platform.resource_class_resolver"/>
+      <argument type="service" id="api_platform.graphql.types_container"/>
+      <argument type="service" id="api_platform.graphql.type_builder"/>
+      <argument type="service" id="api_platform.graphql.type_converter"/>
+      <argument type="service" id="api_platform.graphql.resolver.factory.item"/>
+      <argument>null</argument>
+      <argument>null</argument>
+      <argument>null</argument>
+      <argument type="service" id="api_platform.filter_locator"/>
+      <argument type="service" id="api_platform.pagination"/>
+      <argument type="service" id="serializer.name_converter.metadata_aware" on-invalid="ignore"/>
+      <argument>_</argument>
+    </service>
+    <service id="api_platform.graphql.schema_builder" class="ApiPlatform\GraphQl\Type\SchemaBuilder">
+      <argument type="service" id="api_platform.metadata.resource.name_collection_factory.cached"/>
+      <argument type="service" id="api_platform.metadata.resource.metadata_collection_factory.cached"/>
+      <argument type="service" id="api_platform.graphql.types_factory"/>
+      <argument type="service" id="api_platform.graphql.types_container"/>
+      <argument type="service" id="api_platform.graphql.fields_builder"/>
+    </service>
+    <service id="api_platform.graphql.serializer.context_builder" class="ApiPlatform\GraphQl\Serializer\SerializerContextBuilder">
+      <argument type="service" id="serializer.name_converter.metadata_aware" on-invalid="ignore"/>
+    </service>
+    <service id="api_platform.graphql.state_provider.parameter" class="ApiPlatform\State\Provider\ParameterProvider">
+      <argument type="service" id="api_platform.graphql.state_provider.access_checker"/>
+      <argument type="service" id=".service_locator.DE_8AZb"/>
+    </service>
+    <service id="api_platform.graphql.state_provider.resolver" class="ApiPlatform\GraphQl\State\Provider\ResolverProvider">
+      <argument type="service" id="api_platform.graphql.state_provider.access_checker.post_validate"/>
+      <argument type="service" id="api_platform.graphql.resolver_locator"/>
+    </service>
+    <service id="api_platform.graphql.state_processor.subscription" class="ApiPlatform\GraphQl\State\Processor\SubscriptionProcessor">
+      <argument type="service" id="api_platform.graphql.state_processor.normalize"/>
+      <argument type="service" id="api_platform.graphql.subscription.subscription_manager"/>
+      <argument>null</argument>
+    </service>
+    <service id="api_platform.graphql.state_processor.write" class="ApiPlatform\State\Processor\WriteProcessor">
+      <argument type="service" id="api_platform.graphql.state_processor.subscription"/>
+      <argument type="service" id="api_platform.state_processor.locator"/>
+    </service>
+    <service id="api_platform.graphql.state_processor.normalize" class="ApiPlatform\GraphQl\State\Processor\NormalizeProcessor">
+      <argument type="service" id="debug.serializer"/>
+      <argument type="service" id="api_platform.graphql.serializer.context_builder"/>
+      <argument type="service" id="api_platform.pagination"/>
+    </service>
+    <service id="api_platform.graphql.resolver.factory.item" class="ApiPlatform\GraphQl\Resolver\Factory\ResolverFactory">
+      <argument type="service" id="api_platform.graphql.state_provider.access_checker.after_resolver"/>
+      <argument type="service" id="api_platform.graphql.state_processor.write"/>
+    </service>
+    <service id="api_platform.graphql.provider.read" class="ApiPlatform\GraphQl\Provider\ReadProvider">
+      <argument type="service" id="api_platform.symfony.iri_converter"/>
+      <argument type="service" id="api_platform.state_provider.locator"/>
+      <argument type="service" id="api_platform.graphql.serializer.context_builder"/>
+      <argument>_</argument>
+    </service>
+    <service id="api_platform.graphql.resolver.resource_field" class="ApiPlatform\GraphQl\Resolver\ResourceFieldResolver">
+      <argument type="service" id="api_platform.symfony.iri_converter"/>
+    </service>
+    <service id="api_platform.graphql.normalizer.item" class="ApiPlatform\GraphQl\Serializer\ItemNormalizer">
+      <tag name="serializer.normalizer" priority="-890"/>
+      <argument type="service" id="api_platform.metadata.property.name_collection_factory.cached"/>
+      <argument type="service" id="api_platform.metadata.property.metadata_factory.cached"/>
+      <argument type="service" id="api_platform.symfony.iri_converter"/>
+      <argument type="service" id="api_platform.api.identifiers_extractor"/>
+      <argument type="service" id="api_platform.resource_class_resolver"/>
+      <argument type="service" id="property_accessor"/>
+      <argument type="service" id="serializer.name_converter.metadata_aware" on-invalid="ignore"/>
+      <argument type="service" id="api_platform.serializer.mapping.class_metadata_factory" on-invalid="ignore"/>
+      <argument>null</argument>
+      <argument type="service" id="api_platform.metadata.resource.metadata_collection_factory.cached" on-invalid="ignore"/>
+      <argument type="service" id="api_platform.security.resource_access_checker" on-invalid="ignore"/>
+    </service>
+    <service id="api_platform.graphql.normalizer.object" class="ApiPlatform\GraphQl\Serializer\ObjectNormalizer">
+      <tag name="serializer.normalizer" priority="-995"/>
+      <argument type="service" id="serializer.normalizer.object"/>
+      <argument type="service" id="api_platform.symfony.iri_converter"/>
+      <argument type="service" id="api_platform.api.identifiers_extractor"/>
+    </service>
+    <service id="api_platform.graphql.subscription.subscription_manager" class="ApiPlatform\GraphQl\Subscription\SubscriptionManager">
+      <argument type="service" id="api_platform.graphql.cache.subscription"/>
+      <argument type="service" id="api_platform.graphql.subscription.subscription_identifier_generator"/>
+      <argument>null</argument>
+      <argument type="service" id="api_platform.symfony.iri_converter"/>
+      <argument type="service" id="api_platform.metadata.resource.metadata_collection_factory.cached"/>
+      <argument type="service" id="api_platform.graphql.state_processor.normalize" on-invalid="ignore"/>
+    </service>
+    <service id="api_platform.graphql.normalizer.error" class="ApiPlatform\GraphQl\Serializer\Exception\ErrorNormalizer">
+      <tag name="serializer.normalizer" priority="-790"/>
+    </service>
+    <service id="api_platform.graphql.normalizer.validation_exception" class="ApiPlatform\GraphQl\Serializer\Exception\ValidationExceptionNormalizer">
+      <tag name="serializer.normalizer" priority="-780"/>
+      <argument>%api_platform.exception_to_status%</argument>
+    </service>
+    <service id="api_platform.graphql.normalizer.http_exception" class="ApiPlatform\GraphQl\Serializer\Exception\HttpExceptionNormalizer">
+      <tag name="serializer.normalizer" priority="-780"/>
+    </service>
+    <service id="api_platform.graphql.normalizer.runtime_exception" class="ApiPlatform\GraphQl\Serializer\Exception\RuntimeExceptionNormalizer">
+      <tag name="serializer.normalizer" priority="-780"/>
     </service>
     <service id="api_platform.doctrine.metadata_factory" class="Doctrine\Persistence\Mapping\ClassMetadataFactory">
       <factory service="doctrine.orm.default_entity_manager" method="getMetadataFactory"/>
@@ -8409,7 +8617,7 @@
     </service>
     <service id="api_platform.validator" class="ApiPlatform\Symfony\Validator\Validator">
       <argument type="service" id="debug.validator"/>
-      <argument type="service" id="api_platform.filter_locator"/>
+      <argument type="service" id="api_platform.graphql.resolver_locator"/>
       <argument>true</argument>
     </service>
     <service id="api_platform.validator.query_parameter_validator" class="ApiPlatform\Api\QueryParameterValidator\QueryParameterValidator">
@@ -8417,6 +8625,11 @@
     </service>
     <service id="api_platform.validator.state.error_provider" class="ApiPlatform\Symfony\Validator\State\ErrorProvider">
       <tag name="api_platform.state_provider" key="api_platform.validator.state.error_provider"/>
+    </service>
+    <service id="api_platform.graphql.state_provider.validate_after_resolver" class="ApiPlatform\Symfony\Validator\State\ValidateProvider">
+      <argument type="service" id="api_platform.graphql.state_provider.resolver"/>
+      <argument type="service" id="api_platform.validator"/>
+      <argument>canValidateAfterResolver</argument>
     </service>
     <service id="api_platform.listener.view.validate" class="ApiPlatform\Symfony\EventListener\ValidateListener">
       <tag name="kernel.event_listener" event="kernel.view" method="onKernelView" priority="64"/>
@@ -8490,6 +8703,28 @@
       <argument type="service" id="api_platform.state_provider.access_checker.post_validate.inner"/>
       <argument type="service" id="api_platform.security.resource_access_checker"/>
       <argument>post_validate</argument>
+    </service>
+    <service id="api_platform.graphql.state_provider.access_checker" class="ApiPlatform\Symfony\Security\State\AccessCheckerProvider">
+      <tag name="container.decorator" id="api_platform.graphql.state_provider.read" inner="api_platform.graphql.state_provider.access_checker.inner"/>
+      <argument type="service" id="api_platform.graphql.state_provider.access_checker.inner"/>
+      <argument type="service" id="api_platform.security.resource_access_checker"/>
+    </service>
+    <service id="api_platform.graphql.state_provider.access_checker.post_deserialize" class="ApiPlatform\Symfony\Security\State\AccessCheckerProvider">
+      <tag name="container.decorator" id="api_platform.graphql.state_provider.denormalizer" inner="api_platform.graphql.state_provider.access_checker.post_deserialize.inner"/>
+      <argument type="service" id="api_platform.graphql.state_provider.access_checker.post_deserialize.inner"/>
+      <argument type="service" id="api_platform.security.resource_access_checker"/>
+      <argument>post_denormalize</argument>
+    </service>
+    <service id="api_platform.graphql.state_provider.access_checker.post_validate" class="ApiPlatform\Symfony\Security\State\AccessCheckerProvider">
+      <tag name="container.decorator" id="api_platform.graphql.state_provider.validate" inner="api_platform.graphql.state_provider.access_checker.post_validate.inner"/>
+      <argument type="service" id="api_platform.graphql.state_provider.access_checker.post_validate.inner"/>
+      <argument type="service" id="api_platform.security.resource_access_checker"/>
+      <argument>post_validate</argument>
+    </service>
+    <service id="api_platform.graphql.state_provider.access_checker.after_resolver" class="ApiPlatform\Symfony\Security\State\AccessCheckerProvider">
+      <argument type="service" id="api_platform.graphql.state_provider.validate_after_resolver"/>
+      <argument type="service" id="api_platform.security.resource_access_checker"/>
+      <argument>after_resolver</argument>
     </service>
     <service id="api_platform.maker.command.state_processor" class="ApiPlatform\Symfony\Maker\MakeStateProcessor">
       <tag name="maker.command"/>
@@ -9132,6 +9367,22 @@
       <argument type="service" id="api_platform.problem.normalizer.constraint_violation_list"/>
       <argument type="service" id="serializer.data_collector"/>
     </service>
+    <service id=".debug.serializer.normalizer.api_platform.graphql.normalizer.validation_exception" class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
+      <argument type="service" id="api_platform.graphql.normalizer.validation_exception"/>
+      <argument type="service" id="serializer.data_collector"/>
+    </service>
+    <service id=".debug.serializer.normalizer.api_platform.graphql.normalizer.http_exception" class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
+      <argument type="service" id="api_platform.graphql.normalizer.http_exception"/>
+      <argument type="service" id="serializer.data_collector"/>
+    </service>
+    <service id=".debug.serializer.normalizer.api_platform.graphql.normalizer.runtime_exception" class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
+      <argument type="service" id="api_platform.graphql.normalizer.runtime_exception"/>
+      <argument type="service" id="serializer.data_collector"/>
+    </service>
+    <service id=".debug.serializer.normalizer.api_platform.graphql.normalizer.error" class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
+      <argument type="service" id="api_platform.graphql.normalizer.error"/>
+      <argument type="service" id="serializer.data_collector"/>
+    </service>
     <service id=".debug.serializer.normalizer.api_platform.openapi.normalizer" class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
       <argument type="service" id="api_platform.openapi.normalizer.legacy"/>
       <argument type="service" id="serializer.data_collector"/>
@@ -9174,6 +9425,10 @@
     </service>
     <service id=".debug.serializer.normalizer.api_platform.jsonld.normalizer.item" class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
       <argument type="service" id="api_platform.jsonld.normalizer.item"/>
+      <argument type="service" id="serializer.data_collector"/>
+    </service>
+    <service id=".debug.serializer.normalizer.api_platform.graphql.normalizer.item" class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
+      <argument type="service" id="api_platform.graphql.normalizer.item"/>
       <argument type="service" id="serializer.data_collector"/>
     </service>
     <service id=".debug.serializer.normalizer.api_platform.serializer.normalizer.item" class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
@@ -9230,6 +9485,10 @@
     </service>
     <service id=".debug.serializer.normalizer.api_platform.jsonld.normalizer.object" class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
       <argument type="service" id="api_platform.jsonld.normalizer.object"/>
+      <argument type="service" id="serializer.data_collector"/>
+    </service>
+    <service id=".debug.serializer.normalizer.api_platform.graphql.normalizer.object" class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
+      <argument type="service" id="api_platform.graphql.normalizer.object"/>
       <argument type="service" id="serializer.data_collector"/>
     </service>
     <service id=".debug.serializer.normalizer.serializer.normalizer.object" class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
@@ -10020,6 +10279,30 @@
         </argument>
         <argument type="service">
           <service class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
+            <argument type="service" id="api_platform.graphql.normalizer.validation_exception"/>
+            <argument type="service" id="serializer.data_collector"/>
+          </service>
+        </argument>
+        <argument type="service">
+          <service class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
+            <argument type="service" id="api_platform.graphql.normalizer.http_exception"/>
+            <argument type="service" id="serializer.data_collector"/>
+          </service>
+        </argument>
+        <argument type="service">
+          <service class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
+            <argument type="service" id="api_platform.graphql.normalizer.runtime_exception"/>
+            <argument type="service" id="serializer.data_collector"/>
+          </service>
+        </argument>
+        <argument type="service">
+          <service class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
+            <argument type="service" id="api_platform.graphql.normalizer.error"/>
+            <argument type="service" id="serializer.data_collector"/>
+          </service>
+        </argument>
+        <argument type="service">
+          <service class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
             <argument type="service" id="api_platform.openapi.normalizer.legacy"/>
             <argument type="service" id="serializer.data_collector"/>
           </service>
@@ -10081,6 +10364,12 @@
         <argument type="service">
           <service class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
             <argument type="service" id="api_platform.jsonld.normalizer.item"/>
+            <argument type="service" id="serializer.data_collector"/>
+          </service>
+        </argument>
+        <argument type="service">
+          <service class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
+            <argument type="service" id="api_platform.graphql.normalizer.item"/>
             <argument type="service" id="serializer.data_collector"/>
           </service>
         </argument>
@@ -10165,6 +10454,12 @@
         <argument type="service">
           <service class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
             <argument type="service" id="api_platform.jsonld.normalizer.object"/>
+            <argument type="service" id="serializer.data_collector"/>
+          </service>
+        </argument>
+        <argument type="service">
+          <service class="Symfony\Component\Serializer\Debug\TraceableNormalizer">
+            <argument type="service" id="api_platform.graphql.normalizer.object"/>
             <argument type="service" id="serializer.data_collector"/>
           </service>
         </argument>
@@ -10286,6 +10581,21 @@
     </service>
     <service id="api_platform.state_provider.access_checker.post_validate.inner" class="ApiPlatform\Symfony\Validator\State\ValidateProvider">
       <argument>null</argument>
+      <argument type="service" id="api_platform.validator"/>
+    </service>
+    <service id="api_platform.graphql.state_provider.access_checker.inner" class="ApiPlatform\GraphQl\State\Provider\ReadProvider">
+      <argument type="service" id="api_platform.state_provider.locator"/>
+      <argument type="service" id="api_platform.symfony.iri_converter"/>
+      <argument type="service" id="api_platform.graphql.serializer.context_builder" on-invalid="ignore"/>
+      <argument>_</argument>
+    </service>
+    <service id="api_platform.graphql.state_provider.access_checker.post_deserialize.inner" class="ApiPlatform\GraphQl\State\Provider\DenormalizeProvider">
+      <argument type="service" id="api_platform.graphql.state_provider.parameter"/>
+      <argument type="service" id="debug.serializer"/>
+      <argument type="service" id="api_platform.graphql.serializer.context_builder"/>
+    </service>
+    <service id="api_platform.graphql.state_provider.access_checker.post_validate.inner" class="ApiPlatform\Symfony\Validator\State\ValidateProvider">
+      <argument type="service" id="api_platform.graphql.state_provider.access_checker.post_deserialize"/>
       <argument type="service" id="api_platform.validator"/>
     </service>
     <service id="debug.security.event_dispatcher.main.inner" class="Symfony\Component\EventDispatcher\EventDispatcher"/>
@@ -11019,7 +11329,7 @@
     </service>
     <service id="console.command_loader" class="Symfony\Component\Console\CommandLoader\ContainerCommandLoader" public="true">
       <tag name="container.no_preload"/>
-      <argument type="service" id=".service_locator.7SE04kA"/>
+      <argument type="service" id=".service_locator.9Zlm0va"/>
       <argument type="collection">
         <argument key="about">console.command.about</argument>
         <argument key="assets:install">console.command.assets_install</argument>
@@ -11109,6 +11419,7 @@
         <argument key="security:hash-password">security.command.user_password_hash</argument>
         <argument key="api:json-schema:generate">api_platform.json_schema.json_schema_generate_command</argument>
         <argument key="api:openapi:export">api_platform.openapi.command</argument>
+        <argument key="api:graphql:export">api_platform.graphql.command.export_command</argument>
         <argument key="debug:api-resource">debug.api_platform.debug_resource.command</argument>
         <argument key="make:auth">maker.auto_command.make_auth</argument>
         <argument key="make:command">maker.auto_command.make_command</argument>
@@ -11144,7 +11455,7 @@
         <argument key="make:state-provider">maker.auto_command.make_state_provider</argument>
       </argument>
     </service>
-    <service id=".service_locator.7SE04kA" class="Symfony\Component\DependencyInjection\ServiceLocator">
+    <service id=".service_locator.9Zlm0va" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator"/>
       <argument type="collection">
         <argument key="console.command.about" type="service_closure" id=".console.command.about.lazy"/>
@@ -11235,6 +11546,7 @@
         <argument key="security.command.user_password_hash" type="service_closure" id=".security.command.user_password_hash.lazy"/>
         <argument key="api_platform.json_schema.json_schema_generate_command" type="service_closure" id="api_platform.json_schema.json_schema_generate_command"/>
         <argument key="api_platform.openapi.command" type="service_closure" id="api_platform.openapi.command"/>
+        <argument key="api_platform.graphql.command.export_command" type="service_closure" id="api_platform.graphql.command.export_command"/>
         <argument key="debug.api_platform.debug_resource.command" type="service_closure" id="debug.api_platform.debug_resource.command"/>
         <argument key="maker.auto_command.make_auth" type="service_closure" id=".maker.auto_command.make_auth.lazy"/>
         <argument key="maker.auto_command.make_command" type="service_closure" id=".maker.auto_command.make_command.lazy"/>
@@ -11385,6 +11697,14 @@
     </service>
     <service id="api_platform.cache.metadata.resource_collection.recorder_inner" class="Symfony\Component\Cache\Adapter\AdapterInterface">
       <argument>WK6gc4YKQq</argument>
+      <argument>0</argument>
+      <argument>%container.build_id%</argument>
+      <argument>/var/www/html/WR506D/ProjetSymfonyS5/var/cache/dev/pools/system</argument>
+      <argument type="service" id="monolog.logger.cache" on-invalid="ignore"/>
+      <factory class="Symfony\Component\Cache\Adapter\AbstractAdapter" method="createSystemCache"/>
+    </service>
+    <service id="api_platform.graphql.cache.subscription.recorder_inner" class="Symfony\Component\Cache\Adapter\AdapterInterface">
+      <argument>B13OPiSX7d</argument>
       <argument>0</argument>
       <argument>%container.build_id%</argument>
       <argument>/var/www/html/WR506D/ProjetSymfonyS5/var/cache/dev/pools/system</argument>
@@ -11585,6 +11905,9 @@
     <service id="ApiPlatform\OpenApi\Serializer\OpenApiNormalizer" alias="api_platform.openapi.normalizer.legacy"/>
     <service id="ApiPlatform\OpenApi\Options" alias="api_platform.openapi.options"/>
     <service id="ApiPlatform\OpenApi\Factory\OpenApiFactoryInterface" alias="api_platform.openapi.factory"/>
+    <service id="ApiPlatform\GraphQl\Serializer\SerializerContextBuilderInterface" alias="api_platform.graphql.serializer.context_builder"/>
+    <service id="api_platform.graphql.state_provider" alias="api_platform.graphql.state_provider.access_checker.after_resolver"/>
+    <service id="api_platform.graphql.state_processor" alias="api_platform.graphql.state_processor.write"/>
     <service id="ApiPlatform\Doctrine\Common\State\RemoveProcessor" alias="api_platform.doctrine.orm.state.remove_processor"/>
     <service id="ApiPlatform\Doctrine\Common\State\PersistProcessor" alias="api_platform.doctrine.orm.state.persist_processor"/>
     <service id="ApiPlatform\Doctrine\Orm\Filter\OrderFilter" alias="api_platform.doctrine.orm.order_filter"/>
@@ -11634,6 +11957,8 @@
     <service id=".service_locator.xqODiDp" alias="messenger.receiver_locator"/>
     <service id=".service_locator.kVuTj7R" alias="messenger.retry_strategy_locator"/>
     <service id=".service_locator.9LJrHhf" alias="api_platform.serializer_locator"/>
+    <service id=".service_locator.1MFnxex" alias="api_platform.graphql.type_locator"/>
+    <service id=".service_locator.jYznfT5" alias="api_platform.graphql.fields_builder_locator"/>
     <service id=".service_locator.hUPzsWO" alias=".service_locator.ea.H0ae"/>
     <service id="api_platform.metadata.resource.metadata_collection_factory.deprecations.inner" alias="api_platform.metadata.resource.metadata_collection_factory.attributes"/>
     <service id="api_platform.metadata.resource.metadata_collection_factory.parameter.inner" alias="api_platform.metadata.resource.metadata_collection_factory.deprecations"/>
@@ -11644,7 +11969,10 @@
     <service id="api_platform.metadata.resource.metadata_collection_factory.uri_template.inner" alias="api_platform.metadata.resource.metadata_collection_factory.not_exposed_operation"/>
     <service id="api_platform.metadata.resource.metadata_collection_factory.main_controller.inner" alias="api_platform.metadata.resource.metadata_collection_factory.uri_template"/>
     <service id="api_platform.metadata.resource.metadata_collection_factory.link.inner" alias="api_platform.metadata.resource.metadata_collection_factory.main_controller"/>
+    <service id="api_platform.graphql.state_provider.read.inner" alias="api_platform.state_provider.locator"/>
     <service id="api_platform.state_processor.respond" alias="api_platform.http_cache.processor.add_headers"/>
+    <service id="api_platform.graphql.state_provider.parameter.inner" alias="api_platform.graphql.state_provider.access_checker"/>
+    <service id="api_platform.graphql.state_provider.denormalizer.inner" alias="api_platform.graphql.state_provider.parameter"/>
     <service id="validator" alias="debug.validator"/>
     <service id="api_platform.state_processor.documentation.serialize.inner" alias="api_platform.http_cache.processor.add_headers"/>
     <service id="api_platform.metadata.resource.metadata_collection_factory.operation_name.inner" alias="api_platform.metadata.resource.metadata_collection_factory.link"/>
@@ -11653,10 +11981,16 @@
     <service id="api_platform.metadata.resource.metadata_collection_factory.filters.inner" alias="api_platform.metadata.resource.metadata_collection_factory.formats"/>
     <service id="api_platform.metadata.resource.metadata_collection_factory.alternate_uri.inner" alias="api_platform.metadata.resource.metadata_collection_factory.filters"/>
     <service id="api_platform.metadata.resource.metadata_collection_factory.php_doc.inner" alias="api_platform.metadata.resource.metadata_collection_factory.alternate_uri"/>
+    <service id="api_platform.graphql.state_processor.subscription.inner" alias="api_platform.graphql.state_processor.normalize"/>
+    <service id="api_platform.graphql.state_provider.validate.inner" alias="api_platform.graphql.state_provider.access_checker.post_deserialize"/>
+    <service id="api_platform.graphql.state_provider.resolver.inner" alias="api_platform.graphql.state_provider.access_checker.post_validate"/>
+    <service id="api_platform.graphql.state_provider.validate_after_resolver.inner" alias="api_platform.graphql.state_provider.resolver"/>
+    <service id="api_platform.graphql.state_provider.access_checker.after_resolver.inner" alias="api_platform.graphql.state_provider.validate_after_resolver"/>
     <service id="api_platform.state_provider.read" alias="api_platform.state_provider.access_checker"/>
     <service id="api_platform.state_provider.parameter.inner" alias="api_platform.state_provider.parameter_validator"/>
     <service id="api_platform.state_processor.documentation.write.inner" alias="api_platform.state_processor.documentation.serialize"/>
     <service id="api_platform.state_provider.documentation.content_negotiation.inner" alias="api_platform.swagger_ui.documentation.provider"/>
+    <service id="api_platform.graphql.state_processor.write.inner" alias="api_platform.graphql.state_processor.subscription"/>
     <service id="api_platform.messenger.metadata.resource.metadata_collection_factory.inner" alias="api_platform.metadata.resource.metadata_collection_factory.php_doc"/>
     <service id="api_platform.metadata.property.metadata_factory.property_info.inner" alias="api_platform.metadata.property.metadata_factory.xml"/>
     <service id="api_platform.doctrine.orm.metadata.property.metadata_factory.inner" alias="api_platform.metadata.property.metadata_factory.property_info"/>
@@ -11700,6 +12034,9 @@
     <service id="api_platform.state_provider.access_checker.inner" alias="api_platform.swagger_ui.provider"/>
     <service id="api_platform.state_provider.deserialize" alias="api_platform.state_provider.access_checker.post_deserialize"/>
     <service id="api_platform.state_provider.validate" alias="api_platform.state_provider.access_checker.post_validate"/>
+    <service id="api_platform.graphql.state_provider.read" alias="api_platform.graphql.state_provider.access_checker"/>
+    <service id="api_platform.graphql.state_provider.denormalizer" alias="api_platform.graphql.state_provider.access_checker.post_deserialize"/>
+    <service id="api_platform.graphql.state_provider.validate" alias="api_platform.graphql.state_provider.access_checker.post_validate"/>
     <service id="security.event_dispatcher.main" alias="debug.security.event_dispatcher.main"/>
     <service id="messenger.bus.default" alias="debug.traced.messenger.bus.default"/>
     <service id="doctrine.orm.default_metadata_driver" alias=".doctrine.orm.default_metadata_driver"/>
@@ -11711,7 +12048,7 @@
     <service id="api_platform.metadata.property.name_collection_factory.cached.inner" alias="api_platform.metadata.property.name_collection_factory.yaml"/>
     <service id="api_platform.metadata.property.metadata_factory.cached.inner" alias="api_platform.json_schema.metadata.property.metadata_factory.schema"/>
     <service id="api_platform.metadata.resource.metadata_collection_factory.cached.inner" alias="api_platform.doctrine.orm.metadata.resource.metadata_collection_factory"/>
-    <service id=".service_locator.GIuJv7e" alias="api_platform.filter_locator"/>
+    <service id=".service_locator.GIuJv7e" alias="api_platform.graphql.resolver_locator"/>
     <service id=".service_locator.diNoEIK" alias=".service_locator.4wc4Ag1"/>
     <service id=".service_locator.NntC5cx" alias=".service_locator.DDmiP8z"/>
     <service id=".service_locator.b491maD" alias=".service_locator.QaaoWjx"/>
