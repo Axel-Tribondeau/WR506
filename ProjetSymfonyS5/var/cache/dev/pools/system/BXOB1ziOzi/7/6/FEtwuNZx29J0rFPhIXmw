@@ -1,0 +1,3 @@
+<?php //eada72e3dbf5784a8c2393cfa1473625
+
+return [PHP_INT_MAX, 'bundles/apiplatform/graphiql/graphiql.css'];
