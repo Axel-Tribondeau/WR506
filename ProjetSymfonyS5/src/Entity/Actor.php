@@ -1,17 +1,28 @@
 <?php
 
 namespace App\Entity;
-
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
+use ApiPlatform\Doctrine\Orm\Filter\RangeFilter;
+use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use App\Repository\ActorRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ActorRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 #[ApiResource]
+#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact', 'firstname' => 'partial', 'lastname' => 'partial', 'bio'=> 'partial', 'nationality' => 'exact', 'gender' => 'start', 'movies.title' => 'partial'])]
+#[ApiFilter(DateFilter::class, properties: ['dob'])]
+#[ApiFilter(RangeFilter::class, properties: ['awards'])]
+#[ApiFilter(ExistsFilter::class, properties: ['deathDate'])]
+#[ApiFilter(OrderFilter::class, properties: ['firstname', 'lastname'])]
 class Actor
 {
     #[ORM\PrePersist]
@@ -19,30 +30,42 @@ class Actor
     {
         $this->created_at = new \DateTimeImmutable();
     }
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 255)]
     private ?string $lastname = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
     private ?string $firstname = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Assert\NotBlank]
     private ?\DateTimeInterface $dob = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 255)]
+    #[Assert\Country] // Valide que c'est bien un pays
     private ?string $nationality = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
     private ?string $media = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank]
+    #[Assert\Choice(choices: ['male', 'female', 'non-binary', 'other'])]
     private ?string $gender = null;
 
     #[ORM\Column(nullable: true)]
+    #[Assert\Range(min: 0)]
     private ?int $awards = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]

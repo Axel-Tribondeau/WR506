@@ -3,14 +3,26 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
+use ApiPlatform\Doctrine\Orm\Filter\RangeFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use App\Repository\MovieRepository;
+use DateTimeImmutable;
+use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: MovieRepository::class)]
 #[ApiResource]
+#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact', 'title' => 'partial', 'director' => 'exact', 'description' => 'partial', 'categories.title' => 'partial', 'actors.firstname' => 'partial', 'actors.lastname' => 'partial'])]
+#[ApiFilter(DateFilter::class, properties: ['release_date'])]
+#[ApiFilter(RangeFilter::class, properties: ['duration','entries', 'rating'])]
+#[ApiFilter(OrderFilter::class, properties: ['duration', 'entries'])]
 class Movie
 {
     #[ORM\Id]
@@ -19,27 +31,35 @@ class Movie
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 255)]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $release_date = null;
+    private ?DateTimeInterface $release_date = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 255)]
     private ?string $director = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
     private ?string $media = null;
 
     #[ORM\Column(nullable: true)]
+    #[Assert\Range(min: 0)] // Le nombre d'entrées ne peut pas être négatif
     private ?int $entries = null;
 
     #[ORM\Column(nullable: true)]
+    #[Assert\Range(min: 0, max: 10)] // La note doit être entre 0 et 10
     private ?float $rating = null;
 
     #[ORM\Column(nullable: true)]
+    #[Assert\Range(min: 1)] // La durée doit être d'au moins 1 minute
     private ?int $duration = null;
 
     /**
@@ -55,10 +75,10 @@ class Movie
     private Collection $categories;
 
     #[ORM\Column]
-    private ?\DateTimeImmutable $created_at = null;
+    private ?DateTimeImmutable $created_at = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $updated_at = null;
+    private ?DateTimeInterface $updated_at = null;
 
     public function __construct()
     {
@@ -83,12 +103,12 @@ class Movie
         return $this;
     }
 
-    public function getReleaseDate(): ?\DateTimeInterface
+    public function getReleaseDate(): ?DateTimeInterface
     {
         return $this->release_date;
     }
 
-    public function setReleaseDate(?\DateTimeInterface $release_date): static
+    public function setReleaseDate(?DateTimeInterface $release_date): static
     {
         $this->release_date = $release_date;
 
@@ -215,24 +235,24 @@ class Movie
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
+    public function getCreatedAt(): ?DateTimeImmutable
     {
         return $this->created_at;
     }
 
-    public function setCreatedAt(\DateTimeImmutable $created_at): static
+    public function setCreatedAt(DateTimeImmutable $created_at): static
     {
         $this->created_at = $created_at;
 
         return $this;
     }
 
-    public function getUpdatedAt(): ?\DateTimeInterface
+    public function getUpdatedAt(): ?DateTimeInterface
     {
         return $this->updated_at;
     }
 
-    public function setUpdatedAt(?\DateTimeInterface $updated_at): static
+    public function setUpdatedAt(?DateTimeInterface $updated_at): static
     {
         $this->updated_at = $updated_at;
 

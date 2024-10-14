@@ -1,3 +1,0 @@
-<?php //84ee751d5b4d96b715885f8c1d42b237
-
-return [PHP_INT_MAX, 'bundles/apiplatform/graphiql/graphiql.min.js'];
