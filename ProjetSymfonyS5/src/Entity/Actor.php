@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Entity;
+
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
@@ -18,7 +19,15 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: ActorRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 #[ApiResource]
-#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact', 'firstname' => 'partial', 'lastname' => 'partial', 'bio'=> 'partial', 'nationality' => 'exact', 'gender' => 'start', 'movies.title' => 'partial'])]
+#[ApiFilter(SearchFilter::class, properties: [
+    'id' => 'exact',
+    'firstname' => 'partial',
+    'lastname' => 'partial',
+    'bio'=> 'partial',
+    'nationality' => 'exact',
+    'gender' => 'start',
+    'movies.title' => 'partial'
+])]
 #[ApiFilter(DateFilter::class, properties: ['dob'])]
 #[ApiFilter(RangeFilter::class, properties: ['awards'])]
 #[ApiFilter(ExistsFilter::class, properties: ['deathDate'])]
@@ -38,37 +47,56 @@ class Actor
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
-    #[Assert\Length(max: 255)]
+    #[Assert\Length(
+        min: 3,
+        max: 50,
+        minMessage: 'Your username must be at least {{ limit }} characters long',
+        maxMessage: 'Your usernanme cannot be longer than {{ limit }} characters',
+    )]
     private ?string $lastname = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Assert\Length(max: 255)]
+    #[Assert\Length(
+        min: 3,
+        max: 50,
+        minMessage: 'Your username must be at least {{ limit }} characters long',
+        maxMessage: 'Your usernanme cannot be longer than {{ limit }} characters',
+    )]
     private ?string $firstname = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
-    #[Assert\NotBlank]
     private ?\DateTimeInterface $dob = null;
 
     #[ORM\Column(length: 255)]
-    #[Assert\NotBlank]
-    #[Assert\Length(max: 255)]
     #[Assert\Country] // Valide que c'est bien un pays
     private ?string $nationality = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Assert\Length(max: 255)]
+    #[Assert\Url]
+    #[Assert\NotBlank]
     private ?string $media = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\Choice(['male', 'female','other'])]
     #[Assert\NotBlank]
-    #[Assert\Choice(choices: ['male', 'female', 'non-binary', 'other'])]
     private ?string $gender = null;
 
     #[ORM\Column(nullable: true)]
-    #[Assert\Range(min: 0)]
+    #[Assert\Range(
+        min: 0,
+        max: 10,
+        notInRangeMessage: 'You must put {{ min }}or {{ max }}',
+    )]
     private ?int $awards = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\NotBlank]
+    #[Assert\Length(
+        min: 30,
+        max: 300,
+        minMessage: 'Your first name must be at least {{ limit }} characters long',
+        maxMessage: 'Your first name cannot be longer than {{ limit }} characters',
+    )]
     private ?string $bio = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]

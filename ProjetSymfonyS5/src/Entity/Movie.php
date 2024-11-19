@@ -19,7 +19,15 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: MovieRepository::class)]
 #[ApiResource]
-#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact', 'title' => 'partial', 'director' => 'exact', 'description' => 'partial', 'categories.title' => 'partial', 'actors.firstname' => 'partial', 'actors.lastname' => 'partial'])]
+#[ApiFilter(SearchFilter::class, properties: [
+    'id' => 'exact',
+    'title' => 'partial',
+    'director' => 'exact',
+    'description' => 'partial',
+    'categories.title' => 'partial',
+    'actors.firstname' => 'partial',
+    'actors.lastname' => 'partial'
+])]
 #[ApiFilter(DateFilter::class, properties: ['release_date'])]
 #[ApiFilter(RangeFilter::class, properties: ['duration','entries', 'rating'])]
 #[ApiFilter(OrderFilter::class, properties: ['duration', 'entries'])]
@@ -31,23 +39,35 @@ class Movie
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\Length(
+        min: 3,
+        max: 250,
+        minMessage: 'Your username must be at least {{ limit }} characters long',
+        maxMessage: 'Your usernanme cannot be longer than {{ limit }} characters',
+    )]
     #[Assert\NotBlank]
-    #[Assert\Length(max: 255)]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
+    #[Assert\Date]
     private ?DateTimeInterface $release_date = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
-    #[Assert\Length(max: 255)]
+    #[Assert\Length(
+        min: 3,
+        max: 255,
+        minMessage: 'Your username must be at least {{ limit }} characters long',
+        maxMessage: 'Your usernanme cannot be longer than {{ limit }} characters',
+    )]
     private ?string $director = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Assert\Length(max: 255)]
+    #[Assert\Url]
+    #[Assert\NotBlank]
     private ?string $media = null;
 
     #[ORM\Column(nullable: true)]
@@ -55,11 +75,19 @@ class Movie
     private ?int $entries = null;
 
     #[ORM\Column(nullable: true)]
-    #[Assert\Range(min: 0, max: 10)] // La note doit être entre 0 et 10
+    #[Assert\Range(
+        min: 0,
+        max: 5,
+        notInRangeMessage: 'You must be between {{ min }}cm and {{ max }}cm tall to enter',
+    )]
     private ?float $rating = null;
 
     #[ORM\Column(nullable: true)]
-    #[Assert\Range(min: 1)] // La durée doit être d'au moins 1 minute
+    #[Assert\Range(
+        min: 70,
+        max: 180,
+        notInRangeMessage: 'You must be between {{ min }}min cm and {{ max }}min cm tall to enter',
+    )]
     private ?int $duration = null;
 
     /**
