@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Entity;
+
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
@@ -18,7 +19,15 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: ActorRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 #[ApiResource]
-#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact', 'firstname' => 'partial', 'lastname' => 'partial', 'bio'=> 'partial', 'nationality' => 'exact', 'gender' => 'start', 'movies.title' => 'partial'])]
+#[ApiFilter(SearchFilter::class, properties: [
+    'id' => 'exact',
+    'firstname' => 'partial',
+    'lastname' => 'partial',
+    'bio'=> 'partial',
+    'nationality' => 'exact',
+    'gender' => 'start',
+    'movies.title' => 'partial'
+])]
 #[ApiFilter(DateFilter::class, properties: ['dob'])]
 #[ApiFilter(RangeFilter::class, properties: ['awards'])]
 #[ApiFilter(ExistsFilter::class, properties: ['deathDate'])]

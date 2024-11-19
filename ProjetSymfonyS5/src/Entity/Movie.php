@@ -19,7 +19,15 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: MovieRepository::class)]
 #[ApiResource]
-#[ApiFilter(SearchFilter::class, properties: ['id' => 'exact', 'title' => 'partial', 'director' => 'exact', 'description' => 'partial', 'categories.title' => 'partial', 'actors.firstname' => 'partial', 'actors.lastname' => 'partial'])]
+#[ApiFilter(SearchFilter::class, properties: [
+    'id' => 'exact',
+    'title' => 'partial',
+    'director' => 'exact',
+    'description' => 'partial',
+    'categories.title' => 'partial',
+    'actors.firstname' => 'partial',
+    'actors.lastname' => 'partial'
+])]
 #[ApiFilter(DateFilter::class, properties: ['release_date'])]
 #[ApiFilter(RangeFilter::class, properties: ['duration','entries', 'rating'])]
 #[ApiFilter(OrderFilter::class, properties: ['duration', 'entries'])]
